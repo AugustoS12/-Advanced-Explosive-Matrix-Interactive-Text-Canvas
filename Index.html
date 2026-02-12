@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Matrix Explosivo Avanzado</title>
+<style>
+  body {
+    margin: 0;
+    background-color: black;
+    overflow: hidden;
+    font-family: monospace;
+    color: #00FF00; /* color de texto por defecto visible */
+  }
+
+  canvas {
+    display: block;
+  }
+
+  #controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 1000;
+    color: #00FF00; /* texto visible */
+  }
+
+  #controls input, #controls select {
+    margin-bottom: 5px;
+    width: 150px;
+    background: #000; /* fondo negro para inputs */
+    color: #00FF00;   /* texto verde visible */
+    border: 1px solid #00FF00;
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  button {
+    background: #000;
+    color: #00FF00;
+    border: 1px solid #00FF00;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #00FF00;
+    color: #000;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <label>Texto: <input type="text" id="inputTexto" value="My Love"></label>
+  <label>Color: <input type="color" id="inputColor" value="#FF00FF"></label>
+  <label>Velocidad (ms): <input type="number" id="inputVelocidad" value="50" min="10" max="200"></label>
+</div>
+
+<canvas id="matrixCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("matrixCanvas");
+const ctx = canvas.getContext("2d");
+
+// Configuración inicial
+const config = {
+  texto: "My Love",
+  color: "#FF00FF",
+  velocidad: 50
+};
+
+// Ajustar canvas
+function ajustarCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+ajustarCanvas();
+window.addEventListener("resize", () => {
+  ajustarCanvas();
+  inicializarDrops();
+});
+
+// Matrix
+let columnas, drops;
+function inicializarDrops() {
+  columnas = canvas.width / 20;
+  drops = [];
+  for (let x = 0; x < columnas; x++) {
+    drops[x] = Math.random() * canvas.height;
+  }
+}
+inicializarDrops();
+
+// Partículas explosivas
+let particles = [];
+function crearExplosion(x, y) {
+  const numParticles = 50 + Math.floor(Math.random() * 20);
+  for(let i=0; i<numParticles; i++){
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = Math.random() * 5 + 2;
+    particles.push({
+      x: x,
+      y: y,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      alpha: 1,
+      size: 20,
+      char: config.texto.charAt(Math.floor(Math.random() * config.texto.length))
+    });
+  }
+}
+
+// Dibujo
+function draw() {
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = config.color;
+  ctx.font = "20px monospace";
+  for (let i = 0; i < drops.length; i++) {
+    const textoRandom = config.texto.charAt(Math.floor(Math.random() * config.texto.length));
+    ctx.fillText(textoRandom, i * 20, drops[i]);
+    if (drops[i] > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i] += 20;
+  }
+
+  particles.forEach((p, index) => {
+    ctx.fillStyle = config.color;
+    ctx.globalAlpha = p.alpha;
+    ctx.font = `${p.size}px monospace`;
+    ctx.fillText(p.char, p.x, p.y);
+    ctx.globalAlpha = 1;
+
+    p.x += p.dx;
+    p.y += p.dy;
+    p.alpha -= 0.03;
+    p.size *= 0.96;
+
+    if (p.alpha <= 0) particles.splice(index, 1);
+  });
+}
+
+let interval = setInterval(draw, config.velocidad);
+
+// Inputs
+document.getElementById("inputTexto").addEventListener("input", (e) => {
+  config.texto = e.target.value || " ";
+});
+document.getElementById("inputColor").addEventListener("input", (e) => {
+  config.color = e.target.value;
+});
+document.getElementById("inputVelocidad").addEventListener("input", (e) => {
+  config.velocidad = parseInt(e.target.value) || 50;
+  clearInterval(interval);
+  interval = setInterval(draw, config.velocidad);
+});
+
+// Click para explotar
+canvas.addEventListener("click", (e) => {
+  crearExplosion(e.clientX, e.clientY);
+});
+</script>
+
+</body>
+</html>
